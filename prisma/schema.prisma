@@ -1,0 +1,238 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ── 인증 (NextAuth) ─────────────────────────────
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ── 사용자 / 프로필 ─────────────────────────────
+model User {
+  id            String    @id @default(cuid())
+  email         String?   @unique
+  password      String? // 이메일 회원가입 시 해시 저장, 카카오 로그인은 null
+  nickname      String    @unique
+  image         String?
+  emailVerified DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // 직메 프로필
+  favoriteTeamId Int?
+  favoriteTeam   Team?     @relation(fields: [favoriteTeamId], references: [id])
+  bio            String? // 한줄 소개
+  watchCount     Int       @default(0) // 직관 횟수
+  tags           UserTag[]
+
+  accounts Account[]
+  sessions Session[]
+  posts    Post[]
+  comments Comment[]
+  applications Application[]
+
+  sentMessages     Message[]      @relation("SentMessages")
+  roomParticipants RoomParticipant[]
+  notifications    Notification[]
+
+  reportsMade     Report[] @relation("ReportsMade")
+  reportsReceived Report[] @relation("ReportsReceived")
+  blocksMade      Block[]  @relation("BlocksMade")
+  blocksReceived  Block[]  @relation("BlocksReceived")
+}
+
+model Tag {
+  id    Int       @id @default(autoincrement())
+  name  String    @unique // 예: "직관 초보", "포토그래퍼", "치킨파", "조용히 관람"
+  users UserTag[]
+}
+
+model UserTag {
+  userId String
+  tagId  Int
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tag    Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([userId, tagId])
+}
+
+// ── 구단 ─────────────────────────────
+model Team {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique // 두산 베어스, LG 트윈스 ...
+  shortCode String   @unique // doosan, lg, kt, samsung, lotte, hanwha, kia, ssg, nc, kiwoom
+  logoUrl   String?
+  fans      User[]
+  posts     Post[]
+}
+
+// ── 직관 메이트 모집글 ─────────────────────────────
+model Post {
+  id           String   @id @default(cuid())
+  authorId     String
+  author       User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  teamId       Int
+  team         Team     @relation(fields: [teamId], references: [id])
+
+  title        String
+  content      String   @db.Text
+  matchDate    DateTime // 직관 날짜/경기 일시
+  opponent     String? // 상대 구단
+  stadiumZone  String? // 응원석 구역 (예: 3루 익사이팅존)
+  capacity     Int      @default(2) // 모집 인원 (본인 포함)
+  status       PostStatus @default(OPEN)
+
+  isCompleted  Boolean   @default(false) // 직관 완료 처리 여부 (작성자가 수동 처리)
+  completedAt  DateTime? // 완료 처리 시각 → 이 시점에 참여자 전원 watchCount +1
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  comments     Comment[]
+  applications Application[]
+}
+
+enum PostStatus {
+  OPEN     // 모집중 (신청 받는 중)
+  MATCHED  // 정원만큼 수락 완료, 직관 예정
+  CLOSED   // 마감 (작성자 수동 마감 or 경기일 경과)
+}
+
+// 모집글 신청 (신청 → 수락 승인제)
+model Application {
+  id          String            @id @default(cuid())
+  postId      String
+  post        Post              @relation(fields: [postId], references: [id], onDelete: Cascade)
+  applicantId String
+  applicant   User              @relation(fields: [applicantId], references: [id], onDelete: Cascade)
+  status      ApplicationStatus @default(PENDING)
+  message     String? // 신청 시 한마디 (선택)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  @@unique([postId, applicantId]) // 같은 글에 중복 신청 방지
+}
+
+enum ApplicationStatus {
+  PENDING  // 신청함
+  ACCEPTED // 수락됨 (capacity 도달 시 자동으로 나머지 PENDING → 마감 안내)
+  REJECTED // 거절됨
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+}
+
+// ── DM 채팅 ─────────────────────────────
+model Room {
+  id           String            @id @default(cuid())
+  createdAt    DateTime          @default(now())
+  participants RoomParticipant[]
+  messages     Message[]
+}
+
+model RoomParticipant {
+  roomId  String
+  userId  String
+  room    Room      @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  user    User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  leftAt  DateTime? // 이 시각 이후 메시지는 본인 화면에서만 숨김 (상대방 화면엔 그대로 유지)
+
+  @@id([roomId, userId])
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  roomId    String
+  room      Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  senderId  String
+  sender    User     @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+  readAt    DateTime?
+}
+
+// ── 알림 ─────────────────────────────
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      NotificationType
+  message   String
+  link      String?
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+}
+
+enum NotificationType {
+  NEW_COMMENT
+  NEW_MESSAGE
+  NEW_APPLICATION       // 내 모집글에 신청이 들어왔을 때
+  APPLICATION_ACCEPTED  // 내 신청이 수락됐을 때
+  APPLICATION_REJECTED  // 내 신청이 거절됐을 때
+  WATCH_COMPLETED       // 직관 완료 처리로 직관 횟수가 올랐을 때
+  SYSTEM
+}
+
+// ── 신고 / 차단 (v1) ─────────────────────────────
+model Report {
+  id           String       @id @default(cuid())
+  reporterId   String
+  reporter     User         @relation("ReportsMade", fields: [reporterId], references: [id], onDelete: Cascade)
+  targetUserId String
+  targetUser   User         @relation("ReportsReceived", fields: [targetUserId], references: [id], onDelete: Cascade)
+  reason       String // 신고 사유 (카테고리 or 자유 서술)
+  status       ReportStatus @default(PENDING)
+  createdAt    DateTime     @default(now())
+}
+
+enum ReportStatus {
+  PENDING
+  REVIEWED
+}
+
+model Block {
+  id        String   @id @default(cuid())
+  blockerId String
+  blocker   User     @relation("BlocksMade", fields: [blockerId], references: [id], onDelete: Cascade)
+  blockedId String
+  blocked   User     @relation("BlocksReceived", fields: [blockedId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([blockerId, blockedId]) // 같은 사람 중복 차단 방지
+}
