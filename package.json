@@ -10,7 +10,8 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
-    "socket": "tsx server/socket-server.ts"
+    "socket": "tsx server/socket-server.ts",
+    "postinstall": "prisma generate"
   },
   "dependencies": {
     "next": "14.2.5",
