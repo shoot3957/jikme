@@ -21,6 +21,44 @@ const config: Config = {
           nc: '#315288',
           kiwoom: '#570514',
         },
+        // 나이트게임 팔레트 (인증 화면 등 브랜드 표면용)
+        ink: {
+          700: '#1B2C45',
+          900: '#0F1B2D',
+        },
+        field: {
+          600: '#2F7A52',
+          700: '#1F4D3A',
+        },
+        chalk: {
+          50: '#F5F3ED',
+          100: '#EDEAE0',
+        },
+        gold: {
+          400: '#F0B65C',
+          500: '#E8A33D',
+          600: '#C98526',
+        },
+        stitch: {
+          500: '#C23B3B',
+          600: '#A62F2F',
+        },
+        dirt: {
+          500: '#B08968',
+        },
+      },
+      fontFamily: {
+        display: ['var(--font-display)', 'sans-serif'],
+        body: ['var(--font-body)', 'sans-serif'],
+      },
+      keyframes: {
+        glow: {
+          '0%, 100%': { opacity: '0.55' },
+          '50%': { opacity: '1' },
+        },
+      },
+      animation: {
+        glow: 'glow 6s ease-in-out infinite',
       },
     },
   },

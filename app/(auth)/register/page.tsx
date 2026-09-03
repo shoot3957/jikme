@@ -44,13 +44,13 @@ export default function RegisterPage() {
   const nicknameMessage = useMemo(() => {
     switch (nicknameStatus) {
       case 'checking':
-        return { text: '확인 중...', className: 'text-gray-400' };
+        return { text: '확인 중...', className: 'text-ink-900/40' };
       case 'available':
-        return { text: '사용 가능한 닉네임입니다.', className: 'text-green-600' };
+        return { text: '사용 가능한 닉네임입니다.', className: 'text-field-600' };
       case 'taken':
-        return { text: '이미 사용 중인 닉네임입니다.', className: 'text-red-500' };
+        return { text: '이미 사용 중인 닉네임입니다.', className: 'text-stitch-600' };
       case 'invalid':
-        return { text: '닉네임은 2~12자로 입력해주세요.', className: 'text-red-500' };
+        return { text: '닉네임은 2~12자로 입력해주세요.', className: 'text-stitch-600' };
       default:
         return null;
     }
@@ -102,83 +102,85 @@ export default function RegisterPage() {
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <div className="w-full max-w-sm bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
-        <h1 className="text-xl font-bold text-center mb-6">회원가입</h1>
+    <div>
+      <h1 className="text-2xl font-bold text-ink-900">회원가입</h1>
+      <p className="mt-1 text-sm text-ink-900/60">몇 가지만 알려주시면 바로 시작할 수 있어요.</p>
 
-        {error && (
-          <p className="mb-4 text-sm text-red-500 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
-            {error}
-          </p>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">이메일</label>
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="you@example.com"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">비밀번호</label>
-            <input
-              type="password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="8자 이상"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">비밀번호 확인</label>
-            <input
-              type="password"
-              required
-              value={passwordConfirm}
-              onChange={(e) => setPasswordConfirm(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">닉네임</label>
-            <input
-              type="text"
-              required
-              value={nickname}
-              onChange={(e) => setNickname(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="2~12자"
-            />
-            {nicknameMessage && (
-              <p className={`mt-1 text-xs ${nicknameMessage.className}`}>{nicknameMessage.text}</p>
-            )}
-          </div>
-
-          <button
-            type="submit"
-            disabled={submitting}
-            className="w-full rounded-lg bg-blue-600 text-white text-sm font-medium py-2.5 hover:bg-blue-700 transition disabled:opacity-50"
-          >
-            {submitting ? '가입 중...' : '회원가입'}
-          </button>
-        </form>
-
-        <p className="mt-6 text-center text-sm text-gray-500">
-          이미 계정이 있으신가요?{' '}
-          <Link href="/login" className="text-blue-600 hover:underline">
-            로그인
-          </Link>
+      {error && (
+        <p
+          role="alert"
+          className="mt-6 rounded-md border-l-4 border-stitch-600 bg-stitch-600/5 px-4 py-3 text-sm text-ink-900"
+        >
+          {error}
         </p>
-      </div>
-    </main>
+      )}
+
+      <form onSubmit={handleSubmit} className="mt-8 space-y-4">
+        <div>
+          <label className="mb-1 block text-sm font-medium text-ink-900/80">이메일</label>
+          <input
+            type="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="w-full rounded-lg border border-ink-900/15 px-3.5 py-2.5 text-sm text-ink-900 placeholder:text-ink-900/30 focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500"
+            placeholder="you@example.com"
+          />
+        </div>
+
+        <div>
+          <label className="mb-1 block text-sm font-medium text-ink-900/80">비밀번호</label>
+          <input
+            type="password"
+            required
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="w-full rounded-lg border border-ink-900/15 px-3.5 py-2.5 text-sm text-ink-900 placeholder:text-ink-900/30 focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500"
+            placeholder="8자 이상"
+          />
+        </div>
+
+        <div>
+          <label className="mb-1 block text-sm font-medium text-ink-900/80">비밀번호 확인</label>
+          <input
+            type="password"
+            required
+            value={passwordConfirm}
+            onChange={(e) => setPasswordConfirm(e.target.value)}
+            className="w-full rounded-lg border border-ink-900/15 px-3.5 py-2.5 text-sm text-ink-900 placeholder:text-ink-900/30 focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500"
+          />
+        </div>
+
+        <div>
+          <label className="mb-1 block text-sm font-medium text-ink-900/80">닉네임</label>
+          <input
+            type="text"
+            required
+            value={nickname}
+            onChange={(e) => setNickname(e.target.value)}
+            className="w-full rounded-lg border border-ink-900/15 px-3.5 py-2.5 text-sm text-ink-900 placeholder:text-ink-900/30 focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500"
+            placeholder="2~12자"
+          />
+          {nicknameMessage && (
+            <p className={`mt-1.5 text-xs ${nicknameMessage.className}`}>{nicknameMessage.text}</p>
+          )}
+        </div>
+
+        <button
+          type="submit"
+          disabled={submitting}
+          className="w-full rounded-lg bg-gold-500 py-2.5 text-sm font-semibold text-ink-900 transition hover:bg-gold-400 disabled:opacity-50"
+        >
+          {submitting ? '가입 중...' : '회원가입'}
+        </button>
+      </form>
+
+      <p className="mt-8 text-center text-sm text-ink-900/60">
+        이미 계정이 있으신가요?{' '}
+        <Link href="/login" className="font-medium text-stitch-600 hover:underline">
+          로그인
+        </Link>
+      </p>
+    </div>
   );
 }

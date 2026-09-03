@@ -35,70 +35,72 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <div className="w-full max-w-sm bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
-        <h1 className="text-xl font-bold text-center mb-6">로그인</h1>
+    <div>
+      <h1 className="text-2xl font-bold text-ink-900">로그인</h1>
+      <p className="mt-1 text-sm text-ink-900/60">다시 만나서 반가워요.</p>
 
-        {error && (
-          <p className="mb-4 text-sm text-red-500 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
-            {error}
-          </p>
-        )}
+      {error && (
+        <p
+          role="alert"
+          className="mt-6 rounded-md border-l-4 border-stitch-600 bg-stitch-600/5 px-4 py-3 text-sm text-ink-900"
+        >
+          {error}
+        </p>
+      )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">이메일</label>
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="you@example.com"
-            />
-          </div>
+      <form onSubmit={handleSubmit} className="mt-8 space-y-4">
+        <div>
+          <label className="mb-1 block text-sm font-medium text-ink-900/80">이메일</label>
+          <input
+            type="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="w-full rounded-lg border border-ink-900/15 px-3.5 py-2.5 text-sm text-ink-900 placeholder:text-ink-900/30 focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500"
+            placeholder="you@example.com"
+          />
+        </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">비밀번호</label>
-            <input
-              type="password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={submitting}
-            className="w-full rounded-lg bg-blue-600 text-white text-sm font-medium py-2.5 hover:bg-blue-700 transition disabled:opacity-50"
-          >
-            {submitting ? '로그인 중...' : '로그인'}
-          </button>
-        </form>
-
-        <div className="my-4 flex items-center gap-3">
-          <div className="h-px flex-1 bg-gray-200" />
-          <span className="text-xs text-gray-400">또는</span>
-          <div className="h-px flex-1 bg-gray-200" />
+        <div>
+          <label className="mb-1 block text-sm font-medium text-ink-900/80">비밀번호</label>
+          <input
+            type="password"
+            required
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="w-full rounded-lg border border-ink-900/15 px-3.5 py-2.5 text-sm text-ink-900 placeholder:text-ink-900/30 focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500"
+          />
         </div>
 
         <button
-          type="button"
-          onClick={() => signIn('kakao')}
-          className="w-full rounded-lg bg-[#FEE500] text-[#191919] text-sm font-medium py-2.5 hover:brightness-95 transition"
+          type="submit"
+          disabled={submitting}
+          className="w-full rounded-lg bg-gold-500 py-2.5 text-sm font-semibold text-ink-900 transition hover:bg-gold-400 disabled:opacity-50"
         >
-          카카오로 로그인
+          {submitting ? '로그인 중...' : '로그인'}
         </button>
+      </form>
 
-        <p className="mt-6 text-center text-sm text-gray-500">
-          아직 계정이 없으신가요?{' '}
-          <Link href="/register" className="text-blue-600 hover:underline">
-            회원가입
-          </Link>
-        </p>
+      <div className="my-6 flex items-center gap-3">
+        <div className="h-px flex-1 bg-ink-900/10" />
+        <span className="text-xs text-ink-900/40">또는</span>
+        <div className="h-px flex-1 bg-ink-900/10" />
       </div>
-    </main>
+
+      <button
+        type="button"
+        onClick={() => signIn('kakao')}
+        className="w-full rounded-lg bg-[#FEE500] py-2.5 text-sm font-medium text-[#191919] transition hover:brightness-95"
+      >
+        카카오로 로그인
+      </button>
+
+      <p className="mt-8 text-center text-sm text-ink-900/60">
+        아직 계정이 없으신가요?{' '}
+        <Link href="/register" className="font-medium text-stitch-600 hover:underline">
+          회원가입
+        </Link>
+      </p>
+    </div>
   );
 }
