@@ -15,6 +15,17 @@ const teams = [
   { name: '키움 히어로즈', shortCode: 'kiwoom' },
 ];
 
+const tags = [
+  '직관 초보',
+  '조용히 관람',
+  '포토그래퍼',
+  '먹으러 감',
+  '열정 응원단',
+  '사진 찍는 거 좋아함',
+  '치킨파',
+  '짠물 응원러',
+];
+
 async function main() {
   for (const team of teams) {
     await prisma.team.upsert({
@@ -24,6 +35,15 @@ async function main() {
     });
   }
   console.log('10개 구단 시드 완료');
+
+  for (const name of tags) {
+    await prisma.tag.upsert({
+      where: { name },
+      update: {},
+      create: { name },
+    });
+  }
+  console.log('성향 태그 시드 완료');
 }
 
 main()

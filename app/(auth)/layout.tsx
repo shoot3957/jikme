@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { doHyeon, plexSansKr } from './fonts';
+import { doHyeon, plexSansKr } from '@/lib/fonts';
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
