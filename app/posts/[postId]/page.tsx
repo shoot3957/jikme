@@ -5,6 +5,7 @@ import { getCurrentUserId } from '@/lib/session';
 import { doHyeon, plexSansKr } from '@/lib/fonts';
 import ApplicantManager from '@/components/posts/ApplicantManager';
 import ApplyWidget from '@/components/posts/ApplyWidget';
+import CommentSection from '@/components/posts/CommentSection';
 
 const STATUS_LABEL: Record<string, string> = { OPEN: '모집중', MATCHED: '매칭완료', CLOSED: '마감' };
 const STATUS_BADGE: Record<string, string> = {
@@ -57,7 +58,7 @@ export default async function PostDetailPage({ params }: { params: { postId: str
   const userId = await getCurrentUserId();
   const isAuthor = userId === post.author.id;
 
-  const [applications, myApplication] = await Promise.all([
+  const [applications, myApplication, comments] = await Promise.all([
     isAuthor
       ? prisma.application.findMany({
           where: { postId: post.id },
@@ -83,6 +84,16 @@ export default async function PostDetailPage({ params }: { params: { postId: str
           select: { id: true, status: true },
         })
       : Promise.resolve(null),
+    prisma.comment.findMany({
+      where: { postId: post.id },
+      orderBy: { createdAt: 'asc' },
+      select: {
+        id: true,
+        content: true,
+        createdAt: true,
+        author: { select: { id: true, nickname: true } },
+      },
+    }),
   ]);
 
   return (
@@ -143,12 +154,14 @@ export default async function PostDetailPage({ params }: { params: { postId: str
           />
         )}
 
-        <div className="mt-10 border-t border-ink-900/10 pt-6">
-          <h2 className="text-sm font-semibold text-ink-900">댓글</h2>
-          <p className="mt-3 rounded-xl border border-dashed border-ink-900/15 px-6 py-10 text-center text-sm text-ink-900/40">
-            댓글 기능 준비중이에요.
-          </p>
-        </div>
+        <CommentSection
+          postId={post.id}
+          initialComments={comments.map((comment) => ({
+            ...comment,
+            createdAt: comment.createdAt.toISOString(),
+          }))}
+          currentUserId={userId}
+        />
       </div>
     </div>
   );
