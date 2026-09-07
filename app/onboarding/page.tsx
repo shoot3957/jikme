@@ -3,22 +3,10 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { doHyeon, plexSansKr } from '@/lib/fonts';
+import { TEAM_COLORS } from '@/lib/teamColors';
 
 type Team = { id: number; name: string; shortCode: string };
 type Tag = { id: number; name: string };
-
-const TEAM_COLORS: Record<string, string> = {
-  doosan: '#131230',
-  lg: '#C30452',
-  kt: '#000000',
-  samsung: '#074CA1',
-  lotte: '#041E42',
-  hanwha: '#FF6600',
-  kia: '#EA0029',
-  ssg: '#CE0E2D',
-  nc: '#315288',
-  kiwoom: '#570514',
-};
 
 const STEP_LABELS = ['응원팀', '성향 태그', '한줄소개'] as const;
 
