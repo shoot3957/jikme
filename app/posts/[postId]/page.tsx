@@ -1,7 +1,10 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
+import { getCurrentUserId } from '@/lib/session';
 import { doHyeon, plexSansKr } from '@/lib/fonts';
+import ApplicantManager from '@/components/posts/ApplicantManager';
+import ApplyWidget from '@/components/posts/ApplyWidget';
 
 const STATUS_LABEL: Record<string, string> = { OPEN: '모집중', MATCHED: '매칭완료', CLOSED: '마감' };
 const STATUS_BADGE: Record<string, string> = {
@@ -51,6 +54,36 @@ export default async function PostDetailPage({ params }: { params: { postId: str
   if (!post) notFound();
 
   const filled = post._count.applications + 1;
+  const userId = await getCurrentUserId();
+  const isAuthor = userId === post.author.id;
+
+  const [applications, myApplication] = await Promise.all([
+    isAuthor
+      ? prisma.application.findMany({
+          where: { postId: post.id },
+          orderBy: { createdAt: 'asc' },
+          select: {
+            id: true,
+            message: true,
+            status: true,
+            applicant: {
+              select: {
+                id: true,
+                nickname: true,
+                watchCount: true,
+                favoriteTeam: { select: { name: true } },
+              },
+            },
+          },
+        })
+      : Promise.resolve(null),
+    !isAuthor && userId
+      ? prisma.application.findUnique({
+          where: { postId_applicantId: { postId: post.id, applicantId: userId } },
+          select: { id: true, status: true },
+        })
+      : Promise.resolve(null),
+  ]);
 
   return (
     <div className={`${doHyeon.variable} ${plexSansKr.variable} font-body min-h-screen bg-chalk-50 px-6 py-12`}>
@@ -99,13 +132,16 @@ export default async function PostDetailPage({ params }: { params: { postId: str
           </div>
         </div>
 
-        <button
-          type="button"
-          disabled
-          className="mt-6 w-full cursor-not-allowed rounded-lg bg-ink-900/10 py-2.5 text-sm font-semibold text-ink-900/40"
-        >
-          신청하기 (준비중)
-        </button>
+        {isAuthor ? (
+          <ApplicantManager applications={applications ?? []} />
+        ) : (
+          <ApplyWidget
+            postId={post.id}
+            postStatus={post.status}
+            isLoggedIn={Boolean(userId)}
+            myApplication={myApplication}
+          />
+        )}
 
         <div className="mt-10 border-t border-ink-900/10 pt-6">
           <h2 className="text-sm font-semibold text-ink-900">댓글</h2>
