@@ -11,8 +11,8 @@ export async function GET(_req: NextRequest, { params }: { params: { postId: str
     return NextResponse.json({ error: '모집글을 찾을 수 없습니다.' }, { status: 404 });
   }
 
-  // 경기 날짜가 지난 모집글은 조회 시점에 자동 마감 처리
-  if (existing.matchDate.getTime() < Date.now() && existing.status !== 'CLOSED') {
+  // 경기 날짜가 지난 모집글은 조회 시점에 자동 마감 처리 (매칭된 글은 완료 처리 대상이므로 제외)
+  if (existing.matchDate.getTime() < Date.now() && existing.status === 'OPEN') {
     await prisma.post.update({ where: { id: existing.id }, data: { status: 'CLOSED' } });
   }
 

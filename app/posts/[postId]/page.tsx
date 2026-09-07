@@ -5,6 +5,7 @@ import { getCurrentUserId } from '@/lib/session';
 import { doHyeon, plexSansKr } from '@/lib/fonts';
 import ApplicantManager from '@/components/posts/ApplicantManager';
 import ApplyWidget from '@/components/posts/ApplyWidget';
+import CompleteAction from '@/components/posts/CompleteAction';
 import CommentSection from '@/components/posts/CommentSection';
 
 const STATUS_LABEL: Record<string, string> = { OPEN: '모집중', MATCHED: '매칭완료', CLOSED: '마감' };
@@ -32,7 +33,8 @@ export default async function PostDetailPage({ params }: { params: { postId: str
   });
   if (!existing) notFound();
 
-  if (existing.matchDate.getTime() < Date.now() && existing.status !== 'CLOSED') {
+  // 경기 날짜가 지난 모집글은 조회 시점에 자동 마감 처리 (매칭된 글은 완료 처리 대상이므로 제외)
+  if (existing.matchDate.getTime() < Date.now() && existing.status === 'OPEN') {
     await prisma.post.update({ where: { id: existing.id }, data: { status: 'CLOSED' } });
   }
 
@@ -55,8 +57,10 @@ export default async function PostDetailPage({ params }: { params: { postId: str
   if (!post) notFound();
 
   const filled = post._count.applications + 1;
+  const matchDatePassed = post.matchDate.getTime() < Date.now();
   const userId = await getCurrentUserId();
   const isAuthor = userId === post.author.id;
+  const canComplete = isAuthor && !post.isCompleted && post.status === 'MATCHED' && matchDatePassed;
 
   const [applications, myApplication, comments] = await Promise.all([
     isAuthor
@@ -105,9 +109,16 @@ export default async function PostDetailPage({ params }: { params: { postId: str
 
         <div className="mt-4 flex items-start justify-between gap-3">
           <h1 className="text-2xl font-bold text-ink-900">{post.title}</h1>
-          <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${STATUS_BADGE[post.status]}`}>
-            {STATUS_LABEL[post.status]}
-          </span>
+          <div className="flex shrink-0 items-center gap-1.5">
+            {post.isCompleted && (
+              <span className="rounded-full bg-field-600/10 px-2.5 py-1 text-xs font-medium text-field-600">
+                직관 완료
+              </span>
+            )}
+            <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${STATUS_BADGE[post.status]}`}>
+              {STATUS_LABEL[post.status]}
+            </span>
+          </div>
         </div>
 
         <p className="mt-2 text-sm text-ink-900/60">{formatMatchDate(post.matchDate)}</p>
@@ -153,6 +164,14 @@ export default async function PostDetailPage({ params }: { params: { postId: str
             myApplication={myApplication}
           />
         )}
+
+        {isAuthor && post.isCompleted && (
+          <p className="mt-6 rounded-lg bg-field-600/10 px-4 py-3 text-center text-sm font-semibold text-field-600">
+            직관 완료됨 (참여자 {filled}명 직관 횟수 반영)
+          </p>
+        )}
+
+        {canComplete && <CompleteAction postId={post.id} participantCount={filled} />}
 
         <CommentSection
           postId={post.id}

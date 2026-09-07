@@ -17,9 +17,9 @@ export async function GET(req: NextRequest, { params }: { params: { teamId: stri
   }
   const { status, dateFrom, dateTo, sort, page, limit } = parsed.data;
 
-  // 경기 날짜가 지난 모집글은 조회 시점에 자동 마감 처리
+  // 경기 날짜가 지난 모집글은 조회 시점에 자동 마감 처리 (매칭된 글은 완료 처리 대상이므로 제외)
   await prisma.post.updateMany({
-    where: { teamId: team.id, matchDate: { lt: new Date() }, status: { not: 'CLOSED' } },
+    where: { teamId: team.id, matchDate: { lt: new Date() }, status: 'OPEN' },
     data: { status: 'CLOSED' },
   });
 

@@ -26,8 +26,9 @@ export default async function TeamBoardPage({ params }: { params: { teamId: stri
   const team = await prisma.team.findUnique({ where: { shortCode: params.teamId } });
   if (!team) notFound();
 
+  // 매칭된 글은 완료 처리 대상이므로 자동 마감에서 제외
   await prisma.post.updateMany({
-    where: { teamId: team.id, matchDate: { lt: new Date() }, status: { not: 'CLOSED' } },
+    where: { teamId: team.id, matchDate: { lt: new Date() }, status: 'OPEN' },
     data: { status: 'CLOSED' },
   });
 
