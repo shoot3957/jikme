@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUserId } from '@/lib/session';
+import { createNotification } from '@/lib/notifications';
 import { updateApplicationStatusSchema } from '@/lib/validations/application';
 
 class HttpError extends Error {
@@ -30,7 +31,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { applicatio
 
   const application = await prisma.application.findUnique({
     where: { id: params.applicationId },
-    select: { id: true, postId: true, post: { select: { authorId: true } } },
+    select: { id: true, postId: true, post: { select: { authorId: true, title: true } } },
   });
   if (!application) {
     return NextResponse.json({ error: '신청을 찾을 수 없습니다.' }, { status: 404 });
@@ -40,7 +41,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { applicatio
   }
 
   try {
-    const updated = await prisma.$transaction(async (tx) => {
+    const { result: updated, autoRejectedApplicantIds } = await prisma.$transaction(async (tx) => {
       // 같은 모집글에 대한 동시 수락/거절 처리를 직렬화하기 위해 Post 행에 잠금을 건다.
       // (동시에 여러 신청이 수락되면서 정원을 초과하는 것을 방지)
       await tx.$queryRaw`SELECT id FROM "Post" WHERE id = ${application.postId} FOR UPDATE`;
@@ -55,6 +56,8 @@ export async function PATCH(req: NextRequest, { params }: { params: { applicatio
         data: { status },
       });
 
+      let autoRejectedApplicantIds: string[] = [];
+
       if (status === 'ACCEPTED') {
         const post = await tx.post.findUniqueOrThrow({
           where: { id: application.postId },
@@ -66,6 +69,13 @@ export async function PATCH(req: NextRequest, { params }: { params: { applicatio
 
         if (acceptedCount >= post.capacity - 1) {
           await tx.post.update({ where: { id: application.postId }, data: { status: 'MATCHED' } });
+
+          const stillPending = await tx.application.findMany({
+            where: { postId: application.postId, status: 'PENDING' },
+            select: { applicantId: true },
+          });
+          autoRejectedApplicantIds = stillPending.map((a) => a.applicantId);
+
           await tx.application.updateMany({
             where: { postId: application.postId, status: 'PENDING' },
             data: { status: 'REJECTED' },
@@ -73,8 +83,34 @@ export async function PATCH(req: NextRequest, { params }: { params: { applicatio
         }
       }
 
-      return result;
+      return { result, autoRejectedApplicantIds };
     });
+
+    const postTitle = application.post.title;
+    if (status === 'ACCEPTED') {
+      await createNotification({
+        userId: updated.applicantId,
+        type: 'APPLICATION_ACCEPTED',
+        message: `"${postTitle}" 신청이 수락됐어요! 작성자와 대화해보세요`,
+        link: `/posts/${application.postId}`,
+      });
+    } else {
+      await createNotification({
+        userId: updated.applicantId,
+        type: 'APPLICATION_REJECTED',
+        message: `"${postTitle}" 신청이 거절됐어요`,
+        link: `/posts/${application.postId}`,
+      });
+    }
+
+    for (const applicantId of autoRejectedApplicantIds) {
+      await createNotification({
+        userId: applicantId,
+        type: 'APPLICATION_REJECTED',
+        message: `"${postTitle}" 모집 정원이 차서 신청이 거절됐어요`,
+        link: `/posts/${application.postId}`,
+      });
+    }
 
     return NextResponse.json(updated);
   } catch (e) {

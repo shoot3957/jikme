@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUserId } from '@/lib/session';
+import { createNotification } from '@/lib/notifications';
 
 class HttpError extends Error {
   constructor(
@@ -19,7 +20,7 @@ export async function POST(_req: NextRequest, { params }: { params: { postId: st
 
   const post = await prisma.post.findUnique({
     where: { id: params.postId },
-    select: { id: true, authorId: true, isCompleted: true, matchDate: true },
+    select: { id: true, authorId: true, isCompleted: true, matchDate: true, title: true },
   });
   if (!post) {
     return NextResponse.json({ error: '모집글을 찾을 수 없습니다.' }, { status: 404 });
@@ -63,6 +64,16 @@ export async function POST(_req: NextRequest, { params }: { params: { postId: st
 
       return { completedAt: updatedPost.completedAt, watchCountUpdated };
     });
+
+    for (const applicantId of result.watchCountUpdated) {
+      if (applicantId === post.authorId) continue;
+      await createNotification({
+        userId: applicantId,
+        type: 'WATCH_COMPLETED',
+        message: `"${post.title}" 직관이 완료 처리됐어요. 직관 횟수가 올랐어요!`,
+        link: `/posts/${post.id}`,
+      });
+    }
 
     return NextResponse.json({
       postId: post.id,

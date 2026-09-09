@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUserId } from '@/lib/session';
+import { createNotification } from '@/lib/notifications';
 import { createCommentSchema } from '@/lib/validations/comment';
 
 export async function GET(_req: NextRequest, { params }: { params: { postId: string } }) {
@@ -38,7 +39,7 @@ export async function POST(req: NextRequest, { params }: { params: { postId: str
     );
   }
 
-  const post = await prisma.post.findUnique({ where: { id: params.postId }, select: { id: true } });
+  const post = await prisma.post.findUnique({ where: { id: params.postId }, select: { id: true, authorId: true } });
   if (!post) {
     return NextResponse.json({ error: '모집글을 찾을 수 없습니다.' }, { status: 404 });
   }
@@ -52,6 +53,15 @@ export async function POST(req: NextRequest, { params }: { params: { postId: str
       author: { select: { id: true, nickname: true } },
     },
   });
+
+  if (post.authorId !== userId) {
+    await createNotification({
+      userId: post.authorId,
+      type: 'NEW_COMMENT',
+      message: `${comment.author.nickname}님이 회원님의 모집글에 댓글을 남겼어요`,
+      link: `/posts/${post.id}`,
+    });
+  }
 
   return NextResponse.json(comment, { status: 201 });
 }

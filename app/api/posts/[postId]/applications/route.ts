@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUserId } from '@/lib/session';
+import { createNotification } from '@/lib/notifications';
 import { createApplicationSchema } from '@/lib/validations/application';
 
 export async function POST(req: NextRequest, { params }: { params: { postId: string } }) {
@@ -21,7 +22,7 @@ export async function POST(req: NextRequest, { params }: { params: { postId: str
 
   const post = await prisma.post.findUnique({
     where: { id: params.postId },
-    select: { id: true, authorId: true, status: true },
+    select: { id: true, authorId: true, status: true, title: true },
   });
   if (!post) {
     return NextResponse.json({ error: '모집글을 찾을 수 없습니다.' }, { status: 404 });
@@ -46,6 +47,15 @@ export async function POST(req: NextRequest, { params }: { params: { postId: str
     const application = await prisma.application.create({
       data: { postId: post.id, applicantId: userId, message: parsed.data.message },
     });
+
+    const applicant = await prisma.user.findUnique({ where: { id: userId }, select: { nickname: true } });
+    await createNotification({
+      userId: post.authorId,
+      type: 'NEW_APPLICATION',
+      message: `${applicant?.nickname ?? '누군가'}님이 "${post.title}"에 신청했어요`,
+      link: `/posts/${post.id}`,
+    });
+
     return NextResponse.json(application, { status: 201 });
   } catch (e) {
     if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
