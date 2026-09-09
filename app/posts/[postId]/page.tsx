@@ -8,6 +8,7 @@ import ApplyWidget from '@/components/posts/ApplyWidget';
 import CompleteAction from '@/components/posts/CompleteAction';
 import CommentSection from '@/components/posts/CommentSection';
 import ReportBlockMenu from '@/components/ReportBlockMenu';
+import DmButton from '@/components/DmButton';
 
 const STATUS_LABEL: Record<string, string> = { OPEN: '모집중', MATCHED: '매칭완료', CLOSED: '마감' };
 const STATUS_BADGE: Record<string, string> = {
@@ -153,6 +154,12 @@ export default async function PostDetailPage({ params }: { params: { postId: str
             </p>
             <p className="text-xs text-ink-900/50">직관 {post.author.watchCount}회</p>
           </div>
+          {!isAuthor && userId && (
+            <DmButton
+              targetUserId={post.author.id}
+              className="shrink-0 rounded-lg border border-ink-900/15 px-3 py-1.5 text-xs font-semibold text-ink-900/70 transition hover:border-ink-900/30"
+            />
+          )}
           {!isAuthor && <ReportBlockMenu targetUserId={post.author.id} currentUserId={userId} />}
         </div>
 

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-type Notification = {
+export type Notification = {
   id: string;
   type: string;
   message: string;
@@ -26,31 +26,23 @@ function formatRelativeTime(iso: string) {
   return new Intl.DateTimeFormat('ko-KR', { month: '2-digit', day: '2-digit' }).format(new Date(iso));
 }
 
-export default function NotificationBell() {
+export default function NotificationBell({
+  notifications,
+  unreadCount,
+  loaded,
+  onMarkRead,
+  onMarkAllRead,
+}: {
+  notifications: Notification[];
+  unreadCount: number;
+  loaded: boolean;
+  onMarkRead: (id: string) => void;
+  onMarkAllRead: () => void;
+}) {
   const router = useRouter();
   const rootRef = useRef<HTMLDivElement>(null);
 
   const [open, setOpen] = useState(false);
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [loaded, setLoaded] = useState(false);
-
-  async function loadNotifications() {
-    try {
-      const res = await fetch('/api/notifications?limit=10');
-      if (!res.ok) return;
-      const data = await res.json();
-      setNotifications(data.items ?? []);
-      setUnreadCount(data.unreadCount ?? 0);
-      setLoaded(true);
-    } catch {
-      // 알림 로드 실패는 조용히 무시 — 벨 배지는 다음 갱신 때 다시 시도됨
-    }
-  }
-
-  useEffect(() => {
-    loadNotifications();
-  }, []);
 
   useEffect(() => {
     if (!open) return;
@@ -63,17 +55,8 @@ export default function NotificationBell() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [open]);
 
-  function toggleOpen() {
-    setOpen((v) => {
-      const next = !v;
-      if (next) loadNotifications();
-      return next;
-    });
-  }
-
   async function handleReadAll() {
-    setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
-    setUnreadCount(0);
+    onMarkAllRead();
     try {
       await fetch('/api/notifications/read-all', { method: 'PATCH' });
     } catch {
@@ -83,8 +66,7 @@ export default function NotificationBell() {
 
   async function handleClickNotification(notification: Notification) {
     if (!notification.isRead) {
-      setNotifications((prev) => prev.map((n) => (n.id === notification.id ? { ...n, isRead: true } : n)));
-      setUnreadCount((prev) => Math.max(0, prev - 1));
+      onMarkRead(notification.id);
       fetch(`/api/notifications/${notification.id}/read`, { method: 'PATCH' }).catch(() => {});
     }
     setOpen(false);
@@ -95,7 +77,7 @@ export default function NotificationBell() {
     <div ref={rootRef} className="relative inline-block">
       <button
         type="button"
-        onClick={toggleOpen}
+        onClick={() => setOpen((v) => !v)}
         aria-label="알림"
         className="relative flex h-9 w-9 items-center justify-center rounded-full text-ink-900/60 transition hover:bg-ink-900/5 hover:text-ink-900"
       >

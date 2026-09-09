@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import ReportBlockMenu from '@/components/ReportBlockMenu';
+import DmButton from '@/components/DmButton';
 
 type Applicant = {
   id: string;
@@ -98,6 +99,15 @@ export default function ApplicantManager({
               </div>
 
               {app.message && <p className="mt-2 text-sm text-ink-900/70">&ldquo;{app.message}&rdquo;</p>}
+
+              {currentUserId && (
+                <div className="mt-3">
+                  <DmButton
+                    targetUserId={app.applicant.id}
+                    className="rounded-lg border border-ink-900/15 px-3 py-1 text-xs font-medium text-ink-900/60 transition hover:border-ink-900/30"
+                  />
+                </div>
+              )}
 
               {app.status === 'PENDING' && (
                 <div className="mt-3 flex gap-2">
