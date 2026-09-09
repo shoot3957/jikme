@@ -26,7 +26,8 @@
     "zod": "^3.23.8",
     "zustand": "^4.5.4",
     "lucide-react": "^0.427.0",
-    "date-fns": "^3.6.0"
+    "date-fns": "^3.6.0",
+    "tsx": "^4.16.5"
   },
   "devDependencies": {
     "typescript": "^5.5.4",
@@ -39,8 +40,7 @@
     "postcss": "^8.4.41",
     "autoprefixer": "^10.4.20",
     "eslint": "^8.57.0",
-    "eslint-config-next": "14.2.5",
-    "tsx": "^4.16.5"
+    "eslint-config-next": "14.2.5"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

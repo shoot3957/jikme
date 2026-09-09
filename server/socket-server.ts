@@ -7,6 +7,13 @@
  *  2) Supabase Realtime으로 대체 (Postgres 기반, DB와 통합 관리 편함, Socket.io 불필요)
  *
  * 로컬 개발: `npm run socket` 으로 실행 (기본 포트 4000)
+ *
+ * 배포 시 필요한 환경변수:
+ *  - PORT: Railway 등 PaaS가 자동 주입 (없으면 SOCKET_PORT, 그것도 없으면 4000)
+ *  - ALLOWED_ORIGINS: 허용할 프론트엔드 origin, 콤마로 여러 개 지정 가능
+ *    (예: "http://localhost:3000,https://jikme.vercel.app")
+ *  - SOCKET_INTERNAL_SECRET: Next.js 서버 -> 이 서버 POST /internal/notify 인증용 공유 비밀값
+ *  - DATABASE_URL / DIRECT_URL: Next.js 앱과 동일한 Postgres 연결 정보
  */
 import { createServer, type IncomingMessage, type ServerResponse } from 'http';
 import { Server } from 'socket.io';
@@ -50,6 +57,13 @@ async function handleInternalNotify(req: IncomingMessage, res: ServerResponse, i
   });
 }
 
+// ALLOWED_ORIGINS="http://localhost:3000,https://jikme.vercel.app" 형태의 콤마 구분 목록을 파싱.
+// 지정하지 않으면 기존 NEXT_PUBLIC_APP_URL(단일 origin) 또는 로컬 기본값으로 대체한다.
+const allowedOrigins = (process.env.ALLOWED_ORIGINS ?? process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
 const httpServer = createServer((req, res) => {
   if (req.method === 'POST' && req.url === '/internal/notify') {
     handleInternalNotify(req, res, io);
@@ -61,7 +75,7 @@ const httpServer = createServer((req, res) => {
 
 const io = new Server(httpServer, {
   cors: {
-    origin: process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000',
+    origin: allowedOrigins,
     credentials: true,
   },
 });
@@ -132,7 +146,8 @@ io.on('connection', (socket) => {
   });
 });
 
-const PORT = process.env.SOCKET_PORT ?? 4000;
+// Railway 등 PaaS는 자체적으로 PORT 환경변수를 주입하므로 그것을 최우선으로 사용한다.
+const PORT = process.env.PORT ?? process.env.SOCKET_PORT ?? 4000;
 httpServer.listen(PORT, () => {
   console.log(`Socket.io 서버 실행 중: http://localhost:${PORT}`);
 });
