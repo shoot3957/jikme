@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getCurrentUserId } from '@/lib/session';
+import { getMutuallyBlockedUserIds } from '@/lib/blocks';
 import { listPostsQuerySchema } from '@/lib/validations/post';
 
 export async function GET(req: NextRequest, { params }: { params: { teamId: string } }) {
@@ -23,10 +25,14 @@ export async function GET(req: NextRequest, { params }: { params: { teamId: stri
     data: { status: 'CLOSED' },
   });
 
+  const userId = await getCurrentUserId();
+  const blockedUserIds = userId ? await getMutuallyBlockedUserIds(userId) : [];
+
   const posts = await prisma.post.findMany({
     where: {
       teamId: team.id,
       status: status ?? { in: ['OPEN', 'MATCHED'] },
+      ...(blockedUserIds.length > 0 ? { authorId: { notIn: blockedUserIds } } : {}),
       ...(dateFrom || dateTo
         ? {
             matchDate: {

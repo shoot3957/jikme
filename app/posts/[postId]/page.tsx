@@ -7,6 +7,7 @@ import ApplicantManager from '@/components/posts/ApplicantManager';
 import ApplyWidget from '@/components/posts/ApplyWidget';
 import CompleteAction from '@/components/posts/CompleteAction';
 import CommentSection from '@/components/posts/CommentSection';
+import ReportBlockMenu from '@/components/ReportBlockMenu';
 
 const STATUS_LABEL: Record<string, string> = { OPEN: '모집중', MATCHED: '매칭완료', CLOSED: '마감' };
 const STATUS_BADGE: Record<string, string> = {
@@ -145,17 +146,18 @@ export default async function PostDetailPage({ params }: { params: { postId: str
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-ink-900/5 text-sm font-semibold text-ink-900">
             {post.author.nickname.slice(0, 1)}
           </div>
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <p className="text-sm font-medium text-ink-900">{post.author.nickname}</p>
             <p className="mt-0.5 text-xs text-ink-900/50">
               {post.author.favoriteTeam ? `${post.author.favoriteTeam.name} 팬` : '응원팀 미설정'}
             </p>
             <p className="text-xs text-ink-900/50">직관 {post.author.watchCount}회</p>
           </div>
+          {!isAuthor && <ReportBlockMenu targetUserId={post.author.id} currentUserId={userId} />}
         </div>
 
         {isAuthor ? (
-          <ApplicantManager applications={applications ?? []} />
+          <ApplicantManager applications={applications ?? []} currentUserId={userId} />
         ) : (
           <ApplyWidget
             postId={post.id}

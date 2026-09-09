@@ -1,13 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getCurrentUserId } from '@/lib/session';
+import { isBlockedEitherWay } from '@/lib/blocks';
 
 export async function GET(_req: NextRequest, { params }: { params: { postId: string } }) {
   const existing = await prisma.post.findUnique({
     where: { id: params.postId },
-    select: { id: true, matchDate: true, status: true },
+    select: { id: true, matchDate: true, status: true, authorId: true },
   });
 
   if (!existing) {
+    return NextResponse.json({ error: '모집글을 찾을 수 없습니다.' }, { status: 404 });
+  }
+
+  const userId = await getCurrentUserId();
+  if (userId && (await isBlockedEitherWay(userId, existing.authorId))) {
     return NextResponse.json({ error: '모집글을 찾을 수 없습니다.' }, { status: 404 });
   }
 

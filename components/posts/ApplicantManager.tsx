@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import ReportBlockMenu from '@/components/ReportBlockMenu';
 
 type Applicant = {
   id: string;
@@ -22,7 +23,13 @@ const STATUS_BADGE = {
   REJECTED: 'bg-ink-900/10 text-ink-900/40',
 } as const;
 
-export default function ApplicantManager({ applications }: { applications: Applicant[] }) {
+export default function ApplicantManager({
+  applications,
+  currentUserId,
+}: {
+  applications: Applicant[];
+  currentUserId: string | null;
+}) {
   const router = useRouter();
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [error, setError] = useState('');
@@ -80,11 +87,14 @@ export default function ApplicantManager({ applications }: { applications: Appli
                     {app.applicant.watchCount}회
                   </p>
                 </div>
-                <span
-                  className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${STATUS_BADGE[app.status]}`}
-                >
-                  {STATUS_LABEL[app.status]}
-                </span>
+                <div className="flex shrink-0 items-center gap-1">
+                  <span
+                    className={`rounded-full px-2.5 py-1 text-xs font-medium ${STATUS_BADGE[app.status]}`}
+                  >
+                    {STATUS_LABEL[app.status]}
+                  </span>
+                  <ReportBlockMenu targetUserId={app.applicant.id} currentUserId={currentUserId} />
+                </div>
               </div>
 
               {app.message && <p className="mt-2 text-sm text-ink-900/70">&ldquo;{app.message}&rdquo;</p>}
