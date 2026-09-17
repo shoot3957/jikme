@@ -14,6 +14,7 @@ export default function Header({ userId }: { userId: string | null }) {
   const [unreadNotifCount, setUnreadNotifCount] = useState(0);
   const [notifLoaded, setNotifLoaded] = useState(false);
   const [unreadDmCount, setUnreadDmCount] = useState(0);
+  const [profile, setProfile] = useState<{ nickname: string; image: string | null } | null>(null);
 
   useEffect(() => {
     if (!userId) return;
@@ -31,7 +32,11 @@ export default function Header({ userId }: { userId: string | null }) {
     }
 
     async function loadInitialCounts() {
-      const [notifRes] = await Promise.all([fetch('/api/notifications?limit=10'), refreshDmUnreadCount()]);
+      const [notifRes, meRes] = await Promise.all([
+        fetch('/api/notifications?limit=10'),
+        fetch('/api/users/me'),
+        refreshDmUnreadCount(),
+      ]);
       if (cancelled) return;
 
       if (notifRes.ok) {
@@ -40,6 +45,11 @@ export default function Header({ userId }: { userId: string | null }) {
         setUnreadNotifCount(data.unreadCount ?? 0);
       }
       setNotifLoaded(true);
+
+      if (meRes.ok) {
+        const me = await meRes.json();
+        setProfile({ nickname: me.nickname, image: me.image ?? null });
+      }
     }
     loadInitialCounts();
 
@@ -114,6 +124,18 @@ export default function Header({ userId }: { userId: string | null }) {
             onMarkRead={markNotificationRead}
             onMarkAllRead={markAllNotificationsRead}
           />
+          <Link
+            href="/profile"
+            aria-label="내 프로필"
+            className="ml-1 flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border border-ink-900/10 bg-ink-900/5 text-xs font-semibold text-ink-900 transition hover:border-ink-900/25"
+          >
+            {profile?.image ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={profile.image} alt={profile.nickname} className="h-full w-full object-cover" />
+            ) : (
+              profile?.nickname.slice(0, 1) ?? ''
+            )}
+          </Link>
         </div>
       </div>
     </header>

@@ -42,7 +42,8 @@ model User {
   email         String?   @unique
   password      String? // 이메일 회원가입 시 해시 저장, 카카오 로그인은 null
   nickname      String    @unique
-  image         String?
+  image         String? // 프로필 사진
+  coverImage    String? // 프로필 커버 이미지
   emailVerified DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt

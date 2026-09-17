@@ -3,10 +3,10 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { doHyeon, plexSansKr } from '@/lib/fonts';
-import { TEAM_COLORS } from '@/lib/teamColors';
-
-type Team = { id: number; name: string; shortCode: string };
-type Tag = { id: number; name: string };
+import { useTeamsAndTags } from '@/lib/useTeamsAndTags';
+import TeamPicker from '@/components/profile/TeamPicker';
+import TagPicker from '@/components/profile/TagPicker';
+import BioInput from '@/components/profile/BioInput';
 
 const STEP_LABELS = ['응원팀', '성향 태그', '한줄소개'] as const;
 
@@ -15,8 +15,7 @@ export default function OnboardingPage() {
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [step, setStep] = useState(0);
 
-  const [teams, setTeams] = useState<Team[]>([]);
-  const [tags, setTags] = useState<Tag[]>([]);
+  const { teams, tags } = useTeamsAndTags();
   const [favoriteTeamId, setFavoriteTeamId] = useState<number | null>(null);
   const [selectedTagIds, setSelectedTagIds] = useState<number[]>([]);
   const [bio, setBio] = useState('');
@@ -26,40 +25,19 @@ export default function OnboardingPage() {
 
   useEffect(() => {
     async function init() {
-      const [meRes, teamsRes, tagsRes] = await Promise.all([
-        fetch('/api/users/me'),
-        fetch('/api/teams'),
-        fetch('/api/tags'),
-      ]);
-
+      const meRes = await fetch('/api/users/me');
       if (meRes.status === 401) {
         router.replace('/login');
         return;
       }
-
-      const [me, teamsData, tagsData] = await Promise.all([
-        meRes.json(),
-        teamsRes.json(),
-        tagsRes.json(),
-      ]);
-
-      setTeams(teamsData);
-      setTags(tagsData);
+      const me = await meRes.json();
       setFavoriteTeamId(me.favoriteTeamId ?? null);
-      setSelectedTagIds((me.tags ?? []).map((t: Tag) => t.id));
+      setSelectedTagIds((me.tags ?? []).map((t: { id: number }) => t.id));
       setBio(me.bio ?? '');
       setCheckingAuth(false);
     }
     init();
   }, [router]);
-
-  function toggleTag(tagId: number) {
-    setSelectedTagIds((prev) => {
-      if (prev.includes(tagId)) return prev.filter((id) => id !== tagId);
-      if (prev.length >= 5) return prev;
-      return [...prev, tagId];
-    });
-  }
 
   const canProceedStep0 = favoriteTeamId !== null;
 
@@ -150,26 +128,8 @@ export default function OnboardingPage() {
             <h1 className="text-2xl font-bold text-ink-900">어느 팀을 응원하세요?</h1>
             <p className="mt-1 text-sm text-ink-900/60">응원팀 게시판에서 메이트를 찾을 수 있어요.</p>
 
-            <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3">
-              {teams.map((team) => {
-                const selected = favoriteTeamId === team.id;
-                const color = TEAM_COLORS[team.shortCode] ?? '#0F1B2D';
-                return (
-                  <button
-                    key={team.id}
-                    type="button"
-                    onClick={() => setFavoriteTeamId(team.id)}
-                    style={selected ? { borderColor: color, backgroundColor: `${color}0D` } : undefined}
-                    className={`rounded-xl border-2 px-4 py-4 text-sm font-medium transition ${
-                      selected
-                        ? 'text-ink-900'
-                        : 'border-ink-900/10 text-ink-900/70 hover:border-ink-900/25'
-                    }`}
-                  >
-                    {team.name}
-                  </button>
-                );
-              })}
+            <div className="mt-8">
+              <TeamPicker teams={teams} value={favoriteTeamId} onChange={setFavoriteTeamId} />
             </div>
           </div>
         )}
@@ -177,28 +137,10 @@ export default function OnboardingPage() {
         {step === 1 && (
           <div>
             <h1 className="text-2xl font-bold text-ink-900">어떤 스타일로 관람하세요?</h1>
-            <p className="mt-1 text-sm text-ink-900/60">
-              최대 5개까지 고를 수 있어요. ({selectedTagIds.length}/5)
-            </p>
+            <p className="mt-1 text-sm text-ink-900/60">직관 스타일에 맞는 태그를 골라주세요.</p>
 
-            <div className="mt-8 flex flex-wrap gap-2">
-              {tags.map((tag) => {
-                const selected = selectedTagIds.includes(tag.id);
-                return (
-                  <button
-                    key={tag.id}
-                    type="button"
-                    onClick={() => toggleTag(tag.id)}
-                    className={`rounded-full border px-4 py-2 text-sm font-medium transition ${
-                      selected
-                        ? 'border-gold-500 bg-gold-500 text-ink-900'
-                        : 'border-ink-900/15 text-ink-900/70 hover:border-ink-900/30'
-                    }`}
-                  >
-                    {tag.name}
-                  </button>
-                );
-              })}
+            <div className="mt-8">
+              <TagPicker tags={tags} value={selectedTagIds} onChange={setSelectedTagIds} />
             </div>
           </div>
         )}
@@ -209,15 +151,7 @@ export default function OnboardingPage() {
             <p className="mt-1 text-sm text-ink-900/60">프로필에 표시돼요. 나중에 바꿀 수 있어요.</p>
 
             <div className="mt-8">
-              <textarea
-                value={bio}
-                maxLength={50}
-                onChange={(e) => setBio(e.target.value)}
-                rows={3}
-                placeholder="예: 3루 익사이팅존에서 목청껏 응원하는 걸 좋아해요"
-                className="w-full resize-none rounded-lg border border-ink-900/15 px-3.5 py-2.5 text-sm text-ink-900 placeholder:text-ink-900/30 focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500"
-              />
-              <p className="mt-1.5 text-right text-xs text-ink-900/40">{bio.length}/50</p>
+              <BioInput value={bio} onChange={setBio} />
             </div>
           </div>
         )}

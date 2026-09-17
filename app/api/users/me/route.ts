@@ -9,6 +9,7 @@ const profileSelect = {
   email: true,
   nickname: true,
   image: true,
+  coverImage: true,
   bio: true,
   watchCount: true,
   favoriteTeamId: true,

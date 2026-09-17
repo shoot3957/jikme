@@ -8,6 +8,7 @@ export const updateProfileSchema = z.object({
     .max(12, '닉네임은 2~12자로 입력해주세요.')
     .optional(),
   image: z.string().trim().url('올바른 이미지 URL이 아닙니다.').optional(),
+  coverImage: z.string().trim().url('올바른 이미지 URL이 아닙니다.').optional(),
   bio: z.string().trim().max(50, '한줄 소개는 50자 이내로 입력해주세요.').optional(),
   favoriteTeamId: z.number().int().positive().optional(),
 });
