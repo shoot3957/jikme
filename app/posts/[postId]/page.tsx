@@ -183,7 +183,8 @@ export default async function PostDetailPage({ params }: { params: { postId: str
         {canComplete && <CompleteAction postId={post.id} participantCount={filled} />}
 
         <CommentSection
-          postId={post.id}
+          commentsEndpoint={`/api/posts/${post.id}/comments`}
+          deleteEndpointBase="/api/comments"
           initialComments={comments.map((comment) => ({
             ...comment,
             createdAt: comment.createdAt.toISOString(),

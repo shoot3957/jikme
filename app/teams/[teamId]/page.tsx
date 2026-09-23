@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { getCurrentUserId } from '@/lib/session';
 import { doHyeon, plexSansKr } from '@/lib/fonts';
 import { TEAM_COLORS } from '@/lib/teamColors';
+import BoardTabs from '@/components/teams/BoardTabs';
 
 const STATUS_LABEL: Record<string, string> = { OPEN: '모집중', MATCHED: '매칭완료', CLOSED: '마감' };
 const STATUS_BADGE: Record<string, string> = {
@@ -72,6 +73,10 @@ export default async function TeamBoardPage({ params }: { params: { teamId: stri
           </div>
           <p className="mt-2 text-sm text-ink-900/60">같은 팀을 응원하는 메이트를 찾아보세요.</p>
         </div>
+      </div>
+
+      <div className="mx-auto max-w-3xl px-6 lg:px-16">
+        <BoardTabs teamShortCode={team.shortCode} active="posts" />
       </div>
 
       <div className="mx-auto max-w-3xl px-6 py-10 lg:px-16">

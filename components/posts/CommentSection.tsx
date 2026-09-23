@@ -28,11 +28,15 @@ function formatRelativeTime(iso: string) {
 }
 
 export default function CommentSection({
-  postId,
+  commentsEndpoint,
+  deleteEndpointBase,
   initialComments,
   currentUserId,
 }: {
-  postId: string;
+  /** 댓글 목록 조회(GET)/작성(POST) 엔드포인트, 예: `/api/posts/${postId}/comments` */
+  commentsEndpoint: string;
+  /** 댓글 삭제(DELETE) 엔드포인트의 베이스, 예: `/api/comments` → `${deleteEndpointBase}/${commentId}` */
+  deleteEndpointBase: string;
   initialComments: Comment[];
   currentUserId: string | null;
 }) {
@@ -49,7 +53,7 @@ export default function CommentSection({
     setError('');
     setSubmitting(true);
     try {
-      const res = await fetch(`/api/posts/${postId}/comments`, {
+      const res = await fetch(commentsEndpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content: content.trim() }),
@@ -77,7 +81,7 @@ export default function CommentSection({
     setError('');
     setDeletingId(commentId);
     try {
-      const res = await fetch(`/api/comments/${commentId}`, { method: 'DELETE' });
+      const res = await fetch(`${deleteEndpointBase}/${commentId}`, { method: 'DELETE' });
       if (!res.ok && res.status !== 204) {
         const data = await res.json().catch(() => null);
         setError(data?.error ?? '삭제에 실패했습니다.');

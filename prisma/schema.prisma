@@ -61,6 +61,9 @@ model User {
   comments Comment[]
   applications Application[]
 
+  boardPosts    BoardPost[]
+  boardComments BoardComment[]
+
   sentMessages     Message[]      @relation("SentMessages")
   roomParticipants RoomParticipant[]
   notifications    Notification[]
@@ -94,6 +97,7 @@ model Team {
   logoUrl   String?
   fans      User[]
   posts     Post[]
+  boardPosts BoardPost[]
 }
 
 // ── 직관 메이트 모집글 ─────────────────────────────
@@ -157,6 +161,34 @@ model Comment {
   author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
   content   String   @db.Text
   createdAt DateTime @default(now())
+}
+
+// ── 팀별 자유게시판 (모집글과 별개 — 날짜/구역/인원 없이 자유 작성) ─────
+model BoardPost {
+  id        String   @id @default(cuid())
+  teamId    Int
+  team      Team     @relation(fields: [teamId], references: [id])
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  title     String
+  content   String   @db.Text
+  images    String[] // 업로드된 이미지 URL (최대 5장 — 애플리케이션 레벨에서 제한)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  comments  BoardComment[]
+}
+
+model BoardComment {
+  id          String    @id @default(cuid())
+  boardPostId String
+  boardPost   BoardPost @relation(fields: [boardPostId], references: [id], onDelete: Cascade)
+  authorId    String
+  author      User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  content     String    @db.Text
+  createdAt   DateTime  @default(now())
 }
 
 // ── DM 채팅 ─────────────────────────────
