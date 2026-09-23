@@ -53,6 +53,7 @@ model User {
   favoriteTeam   Team?     @relation(fields: [favoriteTeamId], references: [id])
   bio            String? // 한줄 소개
   watchCount     Int       @default(0) // 직관 횟수
+  mannerTemperature Float  @default(36.5) // 매너온도 (당근마켓 방식) — 0~99 범위
   tags           UserTag[]
 
   accounts Account[]
@@ -63,6 +64,9 @@ model User {
 
   boardPosts    BoardPost[]
   boardComments BoardComment[]
+
+  reviewsGiven    Review[] @relation("ReviewsGiven")
+  reviewsReceived Review[] @relation("ReviewsReceived")
 
   sentMessages     Message[]      @relation("SentMessages")
   roomParticipants RoomParticipant[]
@@ -124,6 +128,7 @@ model Post {
 
   comments     Comment[]
   applications Application[]
+  reviews      Review[]
 }
 
 enum PostStatus {
@@ -161,6 +166,28 @@ model Comment {
   author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
   content   String   @db.Text
   createdAt DateTime @default(now())
+}
+
+// 직관 완료된 모집글의 참여자끼리 서로 남기는 매너 후기 (당근마켓 매너온도 방식)
+model Review {
+  id         String     @id @default(cuid())
+  postId     String
+  post       Post       @relation(fields: [postId], references: [id], onDelete: Cascade)
+  reviewerId String
+  reviewer   User       @relation("ReviewsGiven", fields: [reviewerId], references: [id], onDelete: Cascade)
+  revieweeId String
+  reviewee   User       @relation("ReviewsReceived", fields: [revieweeId], references: [id], onDelete: Cascade)
+  type       ReviewType
+  tags       String[]
+  comment    String?    @db.Text
+  createdAt  DateTime   @default(now())
+
+  @@unique([postId, reviewerId, revieweeId]) // 같은 글에서 같은 상대에게 중복 후기 방지
+}
+
+enum ReviewType {
+  POSITIVE
+  NEGATIVE
 }
 
 // ── 팀별 자유게시판 (모집글과 별개 — 날짜/구역/인원 없이 자유 작성) ─────

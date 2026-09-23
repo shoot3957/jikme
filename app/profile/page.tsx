@@ -8,6 +8,21 @@ import TeamPicker from '@/components/profile/TeamPicker';
 import TagPicker from '@/components/profile/TagPicker';
 import BioInput from '@/components/profile/BioInput';
 import ImageUploader from '@/components/ImageUploader';
+import MannerTemperatureBadge from '@/components/MannerTemperatureBadge';
+
+type ReceivedReview = {
+  id: string;
+  type: 'POSITIVE' | 'NEGATIVE';
+  tags: string[];
+  comment: string | null;
+  createdAt: string;
+};
+
+function formatReviewDate(iso: string) {
+  return new Intl.DateTimeFormat('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' }).format(
+    new Date(iso)
+  );
+}
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -21,6 +36,8 @@ export default function ProfilePage() {
   const [favoriteTeamId, setFavoriteTeamId] = useState<number | null>(null);
   const [selectedTagIds, setSelectedTagIds] = useState<number[]>([]);
   const [watchCount, setWatchCount] = useState(0);
+  const [mannerTemperature, setMannerTemperature] = useState(36.5);
+  const [reviews, setReviews] = useState<ReceivedReview[]>([]);
 
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -41,7 +58,14 @@ export default function ProfilePage() {
       setFavoriteTeamId(me.favoriteTeamId ?? null);
       setSelectedTagIds((me.tags ?? []).map((t: { id: number }) => t.id));
       setWatchCount(me.watchCount ?? 0);
+      setMannerTemperature(me.mannerTemperature ?? 36.5);
       setCheckingAuth(false);
+
+      const reviewsRes = await fetch(`/api/users/${me.id}/reviews`);
+      if (reviewsRes.ok) {
+        const data = await reviewsRes.json();
+        setReviews(data.items ?? []);
+      }
     }
     init();
   }, [router]);
@@ -154,6 +178,10 @@ export default function ProfilePage() {
             <p className="mt-1.5 text-xs text-ink-900/40">직관 {watchCount}회</p>
           </div>
 
+          <div className="rounded-xl border border-ink-900/10 bg-white p-4">
+            <MannerTemperatureBadge temperature={mannerTemperature} size="lg" />
+          </div>
+
           <div>
             <h2 className="mb-3 text-sm font-semibold text-ink-900">응원팀</h2>
             <TeamPicker teams={teams} value={favoriteTeamId} onChange={setFavoriteTeamId} />
@@ -178,6 +206,45 @@ export default function ProfilePage() {
         >
           {submitting ? '저장 중...' : '저장'}
         </button>
+
+        <div className="mt-10 border-t border-ink-900/10 pt-6">
+          <h2 className="text-sm font-semibold text-ink-900">
+            받은 후기{reviews.length > 0 && ` (${reviews.length})`}
+          </h2>
+
+          {reviews.length === 0 ? (
+            <p className="mt-3 rounded-xl border border-dashed border-ink-900/15 px-6 py-10 text-center text-sm text-ink-900/40">
+              아직 받은 후기가 없어요.
+            </p>
+          ) : (
+            <ul className="mt-4 space-y-3">
+              {reviews.map((review) => (
+                <li key={review.id} className="rounded-xl border border-ink-900/10 bg-white p-4">
+                  <div className="flex items-center justify-between gap-2">
+                    <span
+                      className={`rounded-full px-2.5 py-1 text-xs font-medium ${
+                        review.type === 'POSITIVE'
+                          ? 'bg-field-600/10 text-field-600'
+                          : 'bg-stitch-600/10 text-stitch-600'
+                      }`}
+                    >
+                      {review.type === 'POSITIVE' ? '좋아요' : '아쉬워요'}
+                    </span>
+                    <span className="text-xs text-ink-900/40">{formatReviewDate(review.createdAt)}</span>
+                  </div>
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {review.tags.map((tag) => (
+                      <span key={tag} className="rounded-full bg-ink-900/5 px-2.5 py-1 text-xs text-ink-900/70">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                  {review.comment && <p className="mt-2 text-sm text-ink-900/70">{review.comment}</p>}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </div>
     </div>
   );

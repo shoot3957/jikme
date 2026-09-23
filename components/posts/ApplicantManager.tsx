@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import ReportBlockMenu from '@/components/ReportBlockMenu';
 import DmButton from '@/components/DmButton';
+import MannerTemperatureBadge from '@/components/MannerTemperatureBadge';
 
 type Applicant = {
   id: string;
@@ -13,6 +14,7 @@ type Applicant = {
     id: string;
     nickname: string;
     watchCount: number;
+    mannerTemperature: number;
     favoriteTeam: { name: string } | null;
   };
 };
@@ -83,9 +85,12 @@ export default function ApplicantManager({
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-sm font-semibold text-ink-900">{app.applicant.nickname}</p>
-                  <p className="mt-0.5 text-xs text-ink-900/50">
-                    {app.applicant.favoriteTeam ? `${app.applicant.favoriteTeam.name} 팬` : '응원팀 미설정'} · 직관{' '}
-                    {app.applicant.watchCount}회
+                  <p className="mt-0.5 flex flex-wrap items-center gap-x-1 text-xs text-ink-900/50">
+                    <span>
+                      {app.applicant.favoriteTeam ? `${app.applicant.favoriteTeam.name} 팬` : '응원팀 미설정'} · 직관{' '}
+                      {app.applicant.watchCount}회 ·
+                    </span>
+                    <MannerTemperatureBadge temperature={app.applicant.mannerTemperature} />
                   </p>
                 </div>
                 <div className="flex shrink-0 items-center gap-1">

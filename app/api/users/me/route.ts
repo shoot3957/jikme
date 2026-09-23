@@ -12,6 +12,7 @@ const profileSelect = {
   coverImage: true,
   bio: true,
   watchCount: true,
+  mannerTemperature: true,
   favoriteTeamId: true,
   favoriteTeam: { select: { id: true, name: true, shortCode: true } },
   createdAt: true,

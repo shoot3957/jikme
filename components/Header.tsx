@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { io, type Socket } from 'socket.io-client';
 import NotificationBell, { type Notification } from '@/components/NotificationBell';
+import { getMannerTemperatureStyle } from '@/lib/mannerTemperature';
 
 const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL ?? 'http://localhost:4000';
 
@@ -14,7 +15,11 @@ export default function Header({ userId }: { userId: string | null }) {
   const [unreadNotifCount, setUnreadNotifCount] = useState(0);
   const [notifLoaded, setNotifLoaded] = useState(false);
   const [unreadDmCount, setUnreadDmCount] = useState(0);
-  const [profile, setProfile] = useState<{ nickname: string; image: string | null } | null>(null);
+  const [profile, setProfile] = useState<{
+    nickname: string;
+    image: string | null;
+    mannerTemperature: number;
+  } | null>(null);
 
   useEffect(() => {
     if (!userId) return;
@@ -48,7 +53,7 @@ export default function Header({ userId }: { userId: string | null }) {
 
       if (meRes.ok) {
         const me = await meRes.json();
-        setProfile({ nickname: me.nickname, image: me.image ?? null });
+        setProfile({ nickname: me.nickname, image: me.image ?? null, mannerTemperature: me.mannerTemperature });
       }
     }
     loadInitialCounts();
@@ -127,7 +132,9 @@ export default function Header({ userId }: { userId: string | null }) {
           <Link
             href="/profile"
             aria-label="내 프로필"
-            className="ml-1 flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border border-ink-900/10 bg-ink-900/5 text-xs font-semibold text-ink-900 transition hover:border-ink-900/25"
+            className={`ml-1 flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-ink-900/5 text-xs font-semibold text-ink-900 ring-2 ring-offset-1 ring-offset-chalk-50 transition ${
+              profile ? getMannerTemperatureStyle(profile.mannerTemperature).ring : 'ring-ink-900/10'
+            }`}
           >
             {profile?.image ? (
               // eslint-disable-next-line @next/next/no-img-element

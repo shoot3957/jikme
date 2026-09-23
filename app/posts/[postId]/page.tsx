@@ -9,6 +9,8 @@ import CompleteAction from '@/components/posts/CompleteAction';
 import CommentSection from '@/components/posts/CommentSection';
 import ReportBlockMenu from '@/components/ReportBlockMenu';
 import DmButton from '@/components/DmButton';
+import ReviewPrompt from '@/components/posts/ReviewPrompt';
+import MannerTemperatureBadge from '@/components/MannerTemperatureBadge';
 
 const STATUS_LABEL: Record<string, string> = { OPEN: '모집중', MATCHED: '매칭완료', CLOSED: '마감' };
 const STATUS_BADGE: Record<string, string> = {
@@ -48,6 +50,7 @@ export default async function PostDetailPage({ params }: { params: { postId: str
           id: true,
           nickname: true,
           watchCount: true,
+          mannerTemperature: true,
           favoriteTeam: { select: { name: true } },
         },
       },
@@ -78,6 +81,7 @@ export default async function PostDetailPage({ params }: { params: { postId: str
                 id: true,
                 nickname: true,
                 watchCount: true,
+                mannerTemperature: true,
                 favoriteTeam: { select: { name: true } },
               },
             },
@@ -101,6 +105,8 @@ export default async function PostDetailPage({ params }: { params: { postId: str
       },
     }),
   ]);
+
+  const isParticipant = isAuthor || myApplication?.status === 'ACCEPTED';
 
   return (
     <div className={`${doHyeon.variable} ${plexSansKr.variable} font-body min-h-screen bg-chalk-50 px-6 py-12`}>
@@ -152,7 +158,10 @@ export default async function PostDetailPage({ params }: { params: { postId: str
             <p className="mt-0.5 text-xs text-ink-900/50">
               {post.author.favoriteTeam ? `${post.author.favoriteTeam.name} 팬` : '응원팀 미설정'}
             </p>
-            <p className="text-xs text-ink-900/50">직관 {post.author.watchCount}회</p>
+            <p className="flex items-center gap-2 text-xs text-ink-900/50">
+              <span>직관 {post.author.watchCount}회</span>
+              <MannerTemperatureBadge temperature={post.author.mannerTemperature} />
+            </p>
           </div>
           {!isAuthor && userId && (
             <DmButton
@@ -181,6 +190,8 @@ export default async function PostDetailPage({ params }: { params: { postId: str
         )}
 
         {canComplete && <CompleteAction postId={post.id} participantCount={filled} />}
+
+        {post.isCompleted && isParticipant && <ReviewPrompt postId={post.id} />}
 
         <CommentSection
           commentsEndpoint={`/api/posts/${post.id}/comments`}
